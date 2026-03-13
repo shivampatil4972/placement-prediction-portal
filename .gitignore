@@ -1,0 +1,39 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# Local environment files
+.env
+.env.*
+
+# Local database/runtime artifacts
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated ML model artifacts
+*.pkl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test/coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Upload artifacts
+static/uploads/*
+!static/uploads/.gitkeep

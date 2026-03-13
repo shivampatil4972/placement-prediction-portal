@@ -1,0 +1,31 @@
+# ================================================
+# PLACEMENT PORTAL - PYTHON DEPENDENCIES
+# ================================================
+
+# Flask Framework
+Flask==2.3.3
+Flask-MySQLdb==1.0.1
+Werkzeug==2.3.7
+
+# Database
+mysqlclient==2.2.0
+PyMySQL==1.1.0
+
+# Machine Learning
+scikit-learn==1.3.0
+pandas==2.0.3
+numpy==1.24.3
+joblib==1.3.2
+
+# PDF Processing
+PyPDF2==3.0.1
+reportlab==4.0.4
+
+# Data Validation
+email-validator==2.0.0
+
+# Security
+python-dotenv==1.0.0
+
+# Optional: For better development
+Flask-Session==0.5.0

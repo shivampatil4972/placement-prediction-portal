@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction Results - Placement Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12 text-center">
+        <h2><i class="fas fa-chart-pie"></i> Your Placement Prediction Report</h2>
+        <p class="text-muted">Generated on {{ prediction.prediction_date[:19] if prediction.prediction_date else 'N/A' }}</p>
+    </div>
+</div>
+
+<!-- Unified Result Panel -->
+<div class="card shadow-lg border-0 mb-4">
+    <div class="card-header text-white text-center py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h3 class="mb-0"><i class="fas fa-trophy"></i> Placement Prediction Results</h3>
+    </div>
+    <div class="card-body p-4">
+        <!-- Probability & Risk -->
+        <div class="row mb-4">
+            <div class="col-md-6 text-center">
+                <div class="prediction-gauge mx-auto mb-3" style="width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(
+                    {% if prediction.placement_probability >= 70 %}#28a745{% elif prediction.placement_probability >= 40 %}#ffc107{% else %}#dc3545{% endif %} 0deg {{ prediction.placement_probability * 3.6 }}deg, #f0f0f0 {{ prediction.placement_probability * 3.6 }}deg 360deg
+                ); display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="width: 160px; height: 160px; background: white; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <h1 class="display-4 mb-0">{{ prediction.placement_probability }}%</h1>
+                        <p class="text-muted mb-0">Probability</p>
+                    </div>
+                </div>
+                <h4>Placement Probability</h4>
+            </div>
+            
+            <div class="col-md-6 text-center">
+                <div class="alert alert-{% if prediction.risk_level == 'Low' %}success{% elif prediction.risk_level == 'Medium' %}warning{% else %}danger{% endif %} mb-3" style="font-size: 1.2rem;">
+                    <i class="fas fa-exclamation-circle fa-2x"></i>
+                    <h4 class="mt-2">Risk Level: {{ prediction.risk_level }}</h4>
+                </div>
+                
+                <div class="bg-light p-4 rounded">
+                    <i class="fas fa-money-bill-wave fa-3x text-success mb-2"></i>
+                    <h3 class="text-success">₹ {{ prediction.expected_salary }} LPA</h3>
+                    <p class="text-muted">Expected Salary</p>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <!-- Profile Summary -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h5><i class="fas fa-user"></i> Profile Summary</h5>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4>{{ prediction.cgpa }}</h4>
+                        <small>CGPA</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4>{{ prediction.internship_count }}</h4>
+                        <small>Internships</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4>{{ prediction.project_count }}</h4>
+                        <small>Projects</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4>{{ prediction.certification_count }}</h4>
+                        <small>Certifications</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <!-- Skill Gap Analysis -->
+        {% if skill_gap %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h5><i class="fas fa-tasks"></i> Skill Gap Analysis</h5>
+            </div>
+            <div class="col-md-12">
+                <div class="alert alert-{% if skill_gap.priority == 'High' %}danger{% elif skill_gap.priority == 'Medium' %}warning{% else %}info{% endif %}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Priority Level:</strong> 
+                            <span class="badge bg-{% if skill_gap.priority == 'High' %}danger{% elif skill_gap.priority == 'Medium' %}warning{% else %}success{% endif %} fs-6">
+                                {{ skill_gap.priority }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Missing Skills:</strong> {{ skill_gap.missing_skills or 'None identified ✓' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Personalized Suggestions -->
+        {% if skill_gap %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h5><i class="fas fa-lightbulb"></i> Personalized Recommendations</h5>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <ol class="mb-0">
+                            {% for rec in skill_gap.recommended_actions.split('\n') %}
+                                {% if rec.strip() %}
+                                    <li class="mb-2">{{ rec }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <hr>
+        
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h5 class="mb-3">What's Next?</h5>
+                <a href="{{ url_for('download_report') }}" class="btn btn-success btn-lg me-2 mb-2">
+                    <i class="fas fa-download"></i> Download PDF Report
+                </a>
+                <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg me-2 mb-2">
+                    <i class="fas fa-sync"></i> Update Prediction
+                </a>
+                <a href="{{ url_for('analytics') }}" class="btn btn-info btn-lg mb-2">
+                    <i class="fas fa-chart-line"></i> View Analytics
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- What-If Simulation -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-sliders-h"></i> What-If Simulation</h5>
+    </div>
+    <div class="card-body">
+        <p>See how improving your profile affects your placement probability:</p>
+        
+        <form id="simulationForm">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="sim_internships" class="form-label">Internships</label>
+                    <input type="number" class="form-control" id="sim_internships" name="internship_count" value="{{ prediction.internship_count }}" min="0" max="10">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="sim_projects" class="form-label">Projects</label>
+                    <input type="number" class="form-control" id="sim_projects" name="project_count" value="{{ prediction.project_count }}" min="0" max="20">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="sim_certs" class="form-label">Certifications</label>
+                    <input type="number" class="form-control" id="sim_certs" name="certification_count" value="{{ prediction.certification_count }}" min="0" max="20">
+                </div>
+            </div>
+            
+            <button type="button" class="btn btn-primary" onclick="runSimulation()">
+                <i class="fas fa-play"></i> Run Simulation
+            </button>
+        </form>
+        
+        <div id="simulationResult" class="mt-4" style="display: none;">
+            <div class="alert alert-success">
+                <h5>Simulation Result:</h5>
+                <p>
+                    <strong>New Probability:</strong> <span id="newProb"></span>%<br>
+                    <strong>Change:</strong> <span id="probChange"></span>%<br>
+                    <strong>New Salary:</strong> ₹ <span id="newSalary"></span> LPA
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function runSimulation() {
+    const formData = {
+        cgpa: {{ prediction.cgpa }},
+        branch: '{{ prediction.branch }}',
+        internship_count: $('#sim_internships').val(),
+        project_count: $('#sim_projects').val(),
+        certification_count: $('#sim_certs').val(),
+        skills: '{{ prediction.skills_used }}',
+        original_probability: {{ prediction.placement_probability }}
+    };
+    
+    $.ajax({
+        url: '{{ url_for("simulate") }}',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function(response) {
+            $('#newProb').text(response.new_probability);
+            $('#probChange').text(response.improvement > 0 ? '+' + response.improvement : response.improvement);
+            $('#newSalary').text(response.new_salary);
+            $('#simulationResult').slideDown();
+        },
+        error: function() {
+            alert('Simulation failed. Please try again.');
+        }
+    });
+}
+</script>
+{% endblock %}

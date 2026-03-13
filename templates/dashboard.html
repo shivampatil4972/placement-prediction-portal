@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Placement Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fas fa-tachometer-alt"></i> Student Dashboard</h2>
+        <p class="text-muted">Welcome, {{ user.full_name }}!</p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <h3>{{ profile.cgpa if profile else 'N/A' }}</h3>
+                <p class="mb-0">CGPA</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-success text-white">
+            <div class="card-body">
+                <h3>{{ profile.internship_count if profile else 0 }}</h3>
+                <p class="mb-0">Internships</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <h3>{{ profile.project_count if profile else 0 }}</h3>
+                <p class="mb-0">Projects</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-warning text-white">
+            <div class="card-body">
+                <h3>{{ profile.certification_count if profile else 0 }}</h3>
+                <p class="mb-0">Certifications</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Latest Prediction -->
+{% if latest_prediction %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h4 class="mb-0"><i class="fas fa-chart-line"></i> Latest Placement Prediction</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="prediction-circle mx-auto mb-3" style="width: 150px; height: 150px; border-radius: 50%; background: {% if latest_prediction.placement_probability >= 70 %}linear-gradient(135deg, #11998e 0%, #38ef7d 100%){% elif latest_prediction.placement_probability >= 40 %}linear-gradient(135deg, #f093fb 0%, #f5576c 100%){% else %}linear-gradient(135deg, #fa709a 0%, #fee140 100%){% endif %}; display: flex; align-items: center; justify-content: center;">
+                            <div class="text-white">
+                                <h1 class="mb-0">{{ latest_prediction.placement_probability }}%</h1>
+                            </div>
+                        </div>
+                        <h5>Placement Probability</h5>
+                        <span class="badge bg-{% if latest_prediction.risk_level == 'Low' %}success{% elif latest_prediction.risk_level == 'Medium' %}warning{% else %}danger{% endif %} fs-6">
+                            {{ latest_prediction.risk_level }} Risk
+                        </span>
+                    </div>
+                    
+                    <div class="col-md-4 text-center mb-3">
+                        <i class="fas fa-rupee-sign fa-4x text-success mb-3"></i>
+                        <h3 class="text-success">₹ {{ latest_prediction.expected_salary }} LPA</h3>
+                        <p class="text-muted">Expected Salary</p>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h5><i class="fas fa-calendar"></i> Predicted On:</h5>
+                        <p>{{ latest_prediction.prediction_date[:10] if latest_prediction.prediction_date else 'N/A' }}</p>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('predict') }}" class="btn btn-primary">
+                                <i class="fas fa-sync"></i> Update Prediction
+                            </a>
+                            <a href="{{ url_for('results') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-eye"></i> View Full Report
+                            </a>
+                            <a href="{{ url_for('download_report') }}" class="btn btn-outline-success">
+                                <i class="fas fa-download"></i> Download PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle"></i> No Predictions Yet</h5>
+            <p class="mb-3">Get started by making your first placement prediction!</p>
+            <a href="{{ url_for('predict') }}" class="btn btn-primary">
+                <i class="fas fa-brain"></i> Make Prediction
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Skill Gap Analysis -->
+{% if skill_gap %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Skill Gap Analysis</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Priority:</strong> 
+                    <span class="badge bg-{% if skill_gap.priority == 'High' %}danger{% elif skill_gap.priority == 'Medium' %}warning{% else %}success{% endif %}">
+                        {{ skill_gap.priority }}
+                    </span>
+                </p>
+                <p><strong>Missing Skills:</strong> {{ skill_gap.missing_skills or 'None identified' }}</p>
+                <div class="recommendations mt-3">
+                    <strong>Recommendations:</strong>
+                    <ul class="mt-2">
+                        {% for rec in skill_gap.recommended_actions.split('\n')[:5] %}
+                            {% if rec.strip() %}
+                                <li>{{ rec }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Prediction History -->
+{% if prediction_history %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Prediction History</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Probability</th>
+                                <th>Salary</th>
+                                <th>Risk</th>
+                                <th>CGPA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pred in prediction_history %}
+                            <tr>
+                                <td>{{ pred.prediction_date[:10] if pred.prediction_date else 'N/A' }}</td>
+                                <td><strong>{{ pred.placement_probability }}%</strong></td>
+                                <td>₹ {{ pred.expected_salary }} LPA</td>
+                                <td>
+                                    <span class="badge bg-{% if pred.risk_level == 'Low' %}success{% elif pred.risk_level == 'Medium' %}warning{% else %}danger{% endif %}">
+                                        {{ pred.risk_level }}
+                                    </span>
+                                </td>
+                                <td>{{ pred.cgpa }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('analytics') }}" class="btn btn-sm btn-outline-primary">
+                    View Full Analytics <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>Quick Actions</h4>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('profile') }}" class="btn btn-outline-primary w-100">
+            <i class="fas fa-user-edit"></i> Edit Profile
+        </a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('upload_resume') }}" class="btn btn-outline-success w-100">
+            <i class="fas fa-file-upload"></i> Upload Resume
+        </a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('analytics') }}" class="btn btn-outline-info w-100">
+            <i class="fas fa-chart-bar"></i> View Analytics
+        </a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('predict') }}" class="btn btn-outline-warning w-100">
+            <i class="fas fa-brain"></i> New Prediction
+        </a>
+    </div>
+</div>
+{% endblock %}

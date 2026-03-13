@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Placement Portal{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="jumbotron bg-light p-5 rounded-3 mb-4">
+    <div class="container text-center">
+        <h1 class="display-4"><i class="fas fa-graduation-cap text-primary"></i> Student Placement Prediction Portal</h1>
+        <p class="lead mt-3">
+            Predict your placement probability, analyze skill gaps, and get personalized recommendations using Machine Learning.
+        </p>
+        <hr class="my-4">
+        <p>Make data-driven decisions about your career using our AI-powered platform.</p>
+        <div class="mt-4">
+            {% if not session.get('user_id') %}
+                <a class="btn btn-primary btn-lg me-2" href="{{ url_for('register') }}" role="button">
+                    <i class="fas fa-user-plus"></i> Get Started
+                </a>
+                <a class="btn btn-outline-primary btn-lg" href="{{ url_for('login') }}" role="button">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            {% else %}
+                <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}" role="button">
+                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mt-5">
+    <div class="col-md-12 mb-4">
+        <h2 class="text-center mb-4">Key Features</h2>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">ML Prediction</h5>
+                <p class="card-text">
+                    Advanced machine learning models predict your placement probability and expected salary based on your profile.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Skill Gap Analysis</h5>
+                <p class="card-text">
+                    Identify missing skills and receive personalized recommendations to improve your placement chances.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-sliders-h fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">What-If Simulation</h5>
+                <p class="card-text">
+                    Simulate different scenarios to see how improving skills or completing internships affects your probability.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
+                <h5 class="card-title">Resume Parsing</h5>
+                <p class="card-text">
+                    Upload your resume to automatically extract skills and update your profile with AI-powered parsing.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Analytics Dashboard</h5>
+                <p class="card-text">
+                    Visualize your progress with interactive charts showing prediction trends and skill analysis.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-download fa-3x text-secondary mb-3"></i>
+                <h5 class="card-title">PDF Reports</h5>
+                <p class="card-text">
+                    Download comprehensive PDF reports with predictions, analysis, and recommendations for interviews.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="row mt-5 mb-5">
+    <div class="col-md-12">
+        <h2 class="text-center mb-4">How It Works</h2>
+        <div class="row">
+            <div class="col-md-3 text-center">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 24px;">1</div>
+                <h5 class="mt-3">Register</h5>
+                <p>Create your account with basic details</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 24px;">2</div>
+                <h5 class="mt-3">Build Profile</h5>
+                <p>Add your CGPA, skills, internships, and projects</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 24px;">3</div>
+                <h5 class="mt-3">Get Prediction</h5>
+                <p>ML models analyze and predict your placement probability</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 24px;">4</div>
+                <h5 class="mt-3">Improve</h5>
+                <p>Follow recommendations to enhance your chances</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

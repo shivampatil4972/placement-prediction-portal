@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Placement Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fas fa-chart-line"></i> Analytics Dashboard</h2>
+        <p class="text-muted">Visualize your placement prediction trends and insights</p>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Your Prediction Trend</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="trendChart"></canvas>
+                <div id="trendMessage" class="text-center text-muted mt-3" style="display: none;">
+                    <small>Make more predictions to see trend over time</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> CGPA vs Placement Probability</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="cgpaChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-briefcase"></i> Internship Impact</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="internshipChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap"></i> Branch-wise Analysis</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="branchChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction History Table -->
+{% if history %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Prediction History</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Probability</th>
+                                <th>Salary</th>
+                                <th>Risk Level</th>
+                                <th>CGPA</th>
+                                <th>Internships</th>
+                                <th>Projects</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pred in history %}
+                            <tr>
+                                <td>{{ pred.prediction_date[:16] if pred.prediction_date else 'N/A' }}</td>
+                                <td><strong class="text-primary">{{ pred.placement_probability }}%</strong></td>
+                                <td class="text-success">₹ {{ pred.expected_salary }} LPA</td>
+                                <td>
+                                    <span class="badge bg-{% if pred.risk_level == 'Low' %}success{% elif pred.risk_level == 'Medium' %}warning{% else %}danger{% endif %}">
+                                        {{ pred.risk_level }}
+                                    </span>
+                                </td>
+                                <td>{{ pred.cgpa }}</td>
+                                <td>{{ pred.internship_count }}</td>
+                                <td>{{ pred.project_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Fetch and display user trend chart
+fetch('{{ url_for("chart_data", chart_type="user_trends") }}')
+    .then(response => response.json())
+    .then(data => {
+        console.log('User trends data:', data);
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        
+        // Show message if only one data point
+        if (data.labels && data.labels.length === 1) {
+            document.getElementById('trendMessage').style.display = 'block';
+        }
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels || [],
+                datasets: [{
+                    label: 'Placement Probability (%)',
+                    data: data.probability || [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: 'rgb(75, 192, 192)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    tooltip: {
+                        enabled: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error loading user trends:', error);
+        document.getElementById('trendMessage').textContent = 'Error loading chart data';
+        document.getElementById('trendMessage').style.display = 'block';
+    });
+
+// CGPA vs Placement Chart
+fetch('{{ url_for("chart_data", chart_type="cgpa_vs_placement") }}')
+    .then(response => response.json())
+    .then(data => {
+        console.log('CGPA vs Placement data:', data);
+        const ctx = document.getElementById('cgpaChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Average Probability (%)',
+                    data: data.values,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => console.error('Error loading CGPA chart:', error));
+
+// Internship Impact Chart
+fetch('{{ url_for("chart_data", chart_type="internship_impact") }}')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Internship impact data:', data);
+        const ctx = document.getElementById('internshipChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Placement Probability (%)',
+                    data: data.values,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => console.error('Error loading internship chart:', error));
+
+// Branch-wise Chart
+fetch('{{ url_for("chart_data", chart_type="branch_placement") }}')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Branch placement data:', data);
+        const ctx = document.getElementById('branchChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.values,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    })
+    .catch(error => console.error('Error loading branch chart:', error));
+</script>
+{% endblock %}

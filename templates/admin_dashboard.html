@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Placement Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+        <p class="text-muted">System-wide statistics and student management</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x mb-2"></i>
+                <h2>{{ total_students }}</h2>
+                <p class="mb-0">Total Students</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center bg-success text-white">
+            <div class="card-body">
+                <i class="fas fa-percentage fa-3x mb-2"></i>
+                <h2>{{ avg_probability }}%</h2>
+                <p class="mb-0">Avg Placement Probability</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x mb-2"></i>
+                <h2>{{ recent_predictions|length }}</h2>
+                <p class="mb-0">Recent Predictions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Branch Statistics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap"></i> Branch-wise Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Students</th>
+                                <th>Avg CGPA</th>
+                                <th>Avg Internships</th>
+                                <th>Avg Projects</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in branch_stats %}
+                            <tr>
+                                <td><strong>{{ stat.branch }}</strong></td>
+                                <td>{{ stat.student_count }}</td>
+                                <td>{{ "%.2f"|format(stat.avg_cgpa) }}</td>
+                                <td>{{ "%.1f"|format(stat.avg_internships) }}</td>
+                                <td>{{ "%.1f"|format(stat.avg_projects) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Predictions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Predictions</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Branch</th>
+                                <th>CGPA</th>
+                                <th>Probability</th>
+                                <th>Salary</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pred in recent_predictions %}
+                            <tr>
+                                <td>{{ pred.full_name }}</td>
+                                <td>{{ pred.branch }}</td>
+                                <td>{{ pred.cgpa }}</td>
+                                <td><strong class="text-primary">{{ pred.placement_probability }}%</strong></td>
+                                <td class="text-success">₹ {{ pred.expected_salary }} LPA</td>
+                                <td>{{ pred.prediction_date[:10] if pred.prediction_date else 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

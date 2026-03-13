@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Analysis - Placement Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-file-earmark-text"></i> Resume Analysis Results</h2>
+                    <p class="text-muted">Analysis of your uploaded resume</p>
+                </div>
+                <a href="{{ url_for('profile') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Profile
+                </a>
+            </div>
+
+            <!-- Success Message -->
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> 
+                <strong>Resume Analyzed Successfully!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Skills Found Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-code-square"></i> 
+                        Skills Extracted ({{ analysis.skill_count }} found)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis.skills %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for skill in analysis.skills %}
+                                <span class="badge bg-info text-dark" style="font-size: 0.9rem; padding: 8px 12px;">
+                                    {{ skill }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No technical skills found in resume.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Skill Categories Card -->
+            {% if analysis.skill_categories %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-layers"></i> 
+                        Skills by Category
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for category, skills in analysis.skill_categories.items() %}
+                            {% if skills %}
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-primary">{{ category }}</h6>
+                                <ul class="list-unstyled">
+                                    {% for skill in skills %}
+                                        <li><i class="bi bi-check2 text-success"></i> {{ skill }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Contact Information Card -->
+            {% if analysis.email or analysis.phone %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-lines-fill"></i> 
+                        Contact Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if analysis.email %}
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="bi bi-envelope"></i> Email:</strong><br>
+                                {{ analysis.email }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if analysis.phone %}
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="bi bi-telephone"></i> Phone:</strong><br>
+                                {{ analysis.phone }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Resume Preview Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> 
+                        Resume Text Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                        <pre style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 0.85rem; margin: 0;">{{ analysis.text[:1000] }}{% if analysis.text|length > 1000 %}...{% endif %}</pre>
+                    </div>
+                    {% if analysis.text|length > 1000 %}
+                        <p class="text-muted mt-2 mb-0">
+                            <small>Showing first 1000 characters of {{ analysis.text|length }} total</small>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Add Skills to Profile Form -->
+            <div class="card shadow-sm mb-4 border-warning">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle"></i> 
+                        Add Skills to Profile
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Would you like to add the extracted skills to your student profile?</p>
+                    <form method="POST" action="{{ url_for('upload_resume') }}">
+                        <input type="hidden" name="add_to_profile" value="yes">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Add All Skills to Profile
+                        </button>
+                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-lg"></i> Skip
+                        </a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h5 class="mb-3">What's Next?</h5>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <a href="{{ url_for('upload_resume') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-upload"></i> Upload Another Resume
+                        </a>
+                        <a href="{{ url_for('predict') }}" class="btn btn-outline-success">
+                            <i class="bi bi-graph-up-arrow"></i> Get Placement Prediction
+                        </a>
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-info">
+                            <i class="bi bi-person-circle"></i> View Profile
+                        </a>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-speedometer2"></i> Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Card -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm text-center">
+                        <div class="card-body">
+                            <h3 class="text-primary mb-0">{{ analysis.skill_count }}</h3>
+                            <p class="text-muted mb-0">Skills Found</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm text-center">
+                        <div class="card-body">
+                            <h3 class="text-success mb-0">{{ analysis.text|length }}</h3>
+                            <p class="text-muted mb-0">Characters Extracted</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm text-center">
+                        <div class="card-body">
+                            <h3 class="text-info mb-0">{{ analysis.skill_categories|length if analysis.skill_categories else 0 }}</h3>
+                            <p class="text-muted mb-0">Skill Categories</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .badge {
+        transition: transform 0.2s;
+    }
+    .badge:hover {
+        transform: scale(1.05);
+    }
+    
+    .card {
+        transition: box-shadow 0.3s;
+    }
+    
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    pre {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
