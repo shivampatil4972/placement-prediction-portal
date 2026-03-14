@@ -37,3 +37,10 @@ htmlcov/
 # Upload artifacts
 static/uploads/*
 !static/uploads/.gitkeep
+__pycache__/ 
+*.pyc 
+*.db 
+.env 
+models/*.pkl 
+static/uploads/ 
+flask_session/ 

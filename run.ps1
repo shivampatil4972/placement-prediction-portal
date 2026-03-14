@@ -7,4 +7,12 @@ Write-Host ""
 Write-Host "Starting application..." -ForegroundColor Yellow
 Write-Host ""
 
-C:\Users\shiva\anaconda3\python.exe app.py
+$venvPython = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
+
+if (Test-Path $venvPython) {
+	Write-Host "Using project virtual environment..." -ForegroundColor Green
+	& $venvPython "app.py"
+} else {
+	Write-Host "Virtual environment not found. Trying Python launcher..." -ForegroundColor Yellow
+	py -3.12 app.py
+}

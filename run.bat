@@ -6,6 +6,12 @@ echo.
 echo Starting application...
 echo.
 
-C:\Users\shiva\anaconda3\python.exe app.py
+if exist ".venv\Scripts\python.exe" (
+	echo Using project virtual environment...
+	.venv\Scripts\python.exe app.py
+) else (
+	echo Virtual environment not found. Trying Python launcher...
+	py -3.12 app.py
+)
 
 pause
