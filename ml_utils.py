@@ -5,6 +5,7 @@ Handles model loading and predictions
 
 import pickle
 import numpy as np
+import pandas as pd
 from config import Config
 
 class MLPredictor:
@@ -61,20 +62,31 @@ class MLPredictor:
         }
         branch_code = branch_encoding.get(branch, 2)
         
-        # Prepare features
-        features = np.array([[
-            cgpa,
-            branch_code,
-            internship_count,
-            project_count,
-            certification_count,
-            skill_count
-        ]])
+        # Prepare features with names expected by training pipeline.
+        features = pd.DataFrame([
+            {
+                'cgpa': cgpa,
+                'branch_code': branch_code,
+                'internship_count': internship_count,
+                'project_count': project_count,
+                'certification_count': certification_count,
+                'skill_count': skill_count,
+            }
+        ])
         
         try:
             if self.placement_model:
                 # Use actual model
-                probability = self.placement_model.predict_proba(features)[0][1] * 100
+                model_probability = self.placement_model.predict_proba(features)[0][1] * 100
+                probability = self._calibrate_probability(
+                    model_probability=model_probability,
+                    cgpa=cgpa,
+                    branch_code=branch_code,
+                    internship_count=internship_count,
+                    project_count=project_count,
+                    certification_count=certification_count,
+                    skill_count=skill_count,
+                )
             else:
                 # Fallback: rule-based prediction
                 probability = self._fallback_placement_prediction(
@@ -90,6 +102,33 @@ class MLPredictor:
                 cgpa, internship_count, project_count, 
                 certification_count, skill_count
             )
+
+    def _calibrate_probability(self, model_probability, cgpa, branch_code,
+                               internship_count, project_count,
+                               certification_count, skill_count):
+        """Blend model confidence with heuristic guardrails for realistic output."""
+        heuristic = (
+            (cgpa / 10.0) * 44
+            + (branch_code / 5.0) * 12
+            + min(internship_count / 6.0, 1.0) * 16
+            + min(project_count / 8.0, 1.0) * 12
+            + min(certification_count / 10.0, 1.0) * 8
+            + min(skill_count / 10.0, 1.0) * 8
+        )
+
+        blended = (0.72 * float(model_probability)) + (0.28 * float(heuristic))
+
+        # Guardrails for clearly weak profiles to avoid unrealistically high values.
+        if cgpa < 6.0 and internship_count == 0 and project_count <= 1:
+            blended = min(blended, 45.0)
+        elif cgpa < 7.0 and internship_count <= 1 and project_count <= 2:
+            blended = min(blended, 62.0)
+
+        # Keep top profiles strong but avoid impossible overconfidence.
+        if cgpa >= 9.0 and internship_count >= 2 and project_count >= 3:
+            blended = max(blended, 78.0)
+
+        return round(max(0.0, min(100.0, blended)), 2)
     
     def predict_salary(self, cgpa, branch, internship_count, placement_probability):
         """
@@ -113,7 +152,13 @@ class MLPredictor:
         try:
             if self.salary_model:
                 # Use trained ML model (preferred method)
-                features = np.array([[cgpa, internship_count, placement_probability]])
+                features = pd.DataFrame([
+                    {
+                        'cgpa': cgpa,
+                        'internship_count': internship_count,
+                        'placement_probability': placement_probability,
+                    }
+                ])
                 salary = self.salary_model.predict(features)[0]
                 
                 # Apply branch multiplier to model prediction

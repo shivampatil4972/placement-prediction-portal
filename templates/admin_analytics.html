@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Analytics - Placement Portal{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row align-items-center mb-4">
+        <div class="col-lg-8">
+            <p class="eyebrow mb-2">Admin</p>
+            <h2 class="page-title"><i class="fas fa-chart-pie me-2"></i>System Analytics</h2>
+            <p class="page-subtitle mb-0">Review placement trends across all users and branches.</p>
+        </div>
+        <div class="col-lg-4 mt-3 mt-lg-0 text-lg-end">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card app-card chart-card h-100">
+                <div class="card-body">
+                    <h5 class="mb-3"><i class="fas fa-graduation-cap"></i> Branch Placement</h5>
+                    <div class="admin-chart-wrap">
+                        <canvas id="adminBranchChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card app-card chart-card h-100">
+                <div class="card-body">
+                    <h5 class="mb-3"><i class="fas fa-briefcase"></i> Internship Impact</h5>
+                    <div class="admin-chart-wrap">
+                        <canvas id="adminInternshipChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card app-card chart-card h-100">
+                <div class="card-body">
+                    <h5 class="mb-3"><i class="fas fa-chart-line"></i> CGPA vs Probability</h5>
+                    <div class="admin-chart-wrap">
+                        <canvas id="adminCgpaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    fetch('{{ url_for("chart_data", chart_type="branch_placement") }}')
+        .then(response => response.json())
+        .then(data => {
+            new Chart(document.getElementById('adminBranchChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        data: data.values || [],
+                        backgroundColor: ['#b8860b', '#d4af37', '#f2cc5c', '#8f6f16', '#6f550f', '#e5c76b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        })
+        .catch(error => console.error('Error loading branch analytics:', error));
+
+    fetch('{{ url_for("chart_data", chart_type="internship_impact") }}')
+        .then(response => response.json())
+        .then(data => {
+            new Chart(document.getElementById('adminInternshipChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        label: 'Avg Probability (%)',
+                        data: data.values || [],
+                        backgroundColor: 'rgba(184, 134, 11, 0.7)',
+                        borderColor: '#8a6508',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        })
+        .catch(error => console.error('Error loading internship analytics:', error));
+
+    fetch('{{ url_for("chart_data", chart_type="cgpa_vs_placement") }}')
+        .then(response => response.json())
+        .then(data => {
+            new Chart(document.getElementById('adminCgpaChart'), {
+                type: 'line',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        label: 'Avg Probability (%)',
+                        data: data.values || [],
+                        borderColor: '#8a6508',
+                        backgroundColor: 'rgba(212, 175, 55, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        })
+        .catch(error => console.error('Error loading CGPA analytics:', error));
+})();
+</script>
+{% endblock %}

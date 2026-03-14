@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     user_type ENUM('student', 'admin') DEFAULT 'student',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL,
+    reset_token VARCHAR(255) NULL,
+    reset_token_expires_at TIMESTAMP NULL,
     is_active BOOLEAN DEFAULT TRUE,
     INDEX idx_email (email),
     INDEX idx_user_type (user_type)

@@ -20,6 +20,14 @@ def migrate():
         if 'last_login' not in users_columns:
             print("  - Adding last_login to users table...")
             cursor.execute("ALTER TABLE users ADD COLUMN last_login TIMESTAMP")
+
+        if 'reset_token' not in users_columns:
+            print("  - Adding reset_token to users table...")
+            cursor.execute("ALTER TABLE users ADD COLUMN reset_token TEXT")
+
+        if 'reset_token_expires_at' not in users_columns:
+            print("  - Adding reset_token_expires_at to users table...")
+            cursor.execute("ALTER TABLE users ADD COLUMN reset_token_expires_at TEXT")
         
         # Fix student_profiles table
         cursor.execute("PRAGMA table_info(student_profiles)")

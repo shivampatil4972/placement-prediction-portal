@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Students - Placement Portal{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row align-items-center mb-4">
+        <div class="col-lg-8">
+            <p class="eyebrow mb-2">Admin</p>
+            <h2 class="page-title"><i class="fas fa-users-cog me-2"></i>Student Management</h2>
+            <p class="page-subtitle mb-0">Manage student accounts and role access from one place.</p>
+        </div>
+        <div class="col-lg-4 mt-3 mt-lg-0 text-lg-end">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="card app-card">
+        <div class="card-body">
+            <div class="row g-2 mb-3">
+                <div class="col-md-8">
+                    <input id="adminUserSearch" type="text" class="form-control" placeholder="Search by name, email, or branch...">
+                </div>
+                <div class="col-md-4">
+                    <select id="adminRoleFilter" class="form-select">
+                        <option value="all">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="student">Student</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Branch</th>
+                            <th>CGPA</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if students %}
+                            {% for student in students %}
+                            <tr data-user-role="{{ student.user_type|lower }}">
+                                <td>{{ student.full_name or 'N/A' }}</td>
+                                <td>{{ student.email }}</td>
+                                <td>{{ student.branch or 'N/A' }}</td>
+                                <td>{{ student.cgpa if student.cgpa is not none else 'N/A' }}</td>
+                                <td>
+                                    <span class="badge bg-{% if student.user_type == 'admin' %}warning{% else %}success{% endif %}">
+                                        {{ student.user_type|capitalize }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="admin-actions">
+                                        <form method="POST" action="{{ url_for('admin_update_user_role', user_id=student.id) }}" class="admin-role-form">
+                                            <select name="user_type" class="form-select form-select-sm admin-role-select">
+                                                <option value="student" {% if student.user_type == 'student' %}selected{% endif %}>Student</option>
+                                                <option value="admin" {% if student.user_type == 'admin' %}selected{% endif %}>Admin</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary admin-action-btn">Save</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_delete_user', user_id=student.id) }}" onsubmit="return confirm('Delete this user and related data?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger admin-action-btn">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">No students found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const searchInput = document.getElementById('adminUserSearch');
+    const roleFilter = document.getElementById('adminRoleFilter');
+    const rows = Array.from(document.querySelectorAll('tbody tr[data-user-role]'));
+
+    function applyFilters() {
+        const query = (searchInput.value || '').toLowerCase().trim();
+        const selectedRole = roleFilter.value;
+
+        rows.forEach((row) => {
+            const text = row.textContent.toLowerCase();
+            const role = row.getAttribute('data-user-role');
+            const matchesSearch = !query || text.includes(query);
+            const matchesRole = selectedRole === 'all' || role === selectedRole;
+            row.style.display = (matchesSearch && matchesRole) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    roleFilter.addEventListener('change', applyFilters);
+})();
+</script>
+{% endblock %}

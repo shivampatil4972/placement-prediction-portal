@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
 import json
+import re
 
 # Import configurations
 from config import Config
@@ -30,6 +31,28 @@ init_db(app)
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Bootstrap admin account one time after startup.
+ADMIN_BOOTSTRAPPED = False
+
+
+@app.before_request
+def bootstrap_default_admin():
+    """Ensure default admin account exists for admin panel access."""
+    global ADMIN_BOOTSTRAPPED
+    if ADMIN_BOOTSTRAPPED:
+        return
+
+    try:
+        User.ensure_admin_exists(
+            Config.DEFAULT_ADMIN_EMAIL,
+            Config.DEFAULT_ADMIN_PASSWORD,
+            'System Admin'
+        )
+        ADMIN_BOOTSTRAPPED = True
+    except Exception as e:
+        # Keep app running even if bootstrap fails; admin can still be created manually.
+        print(f"Admin bootstrap warning: {str(e)}")
 
 
 # ============================================
@@ -70,6 +93,88 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
+def is_valid_email(email):
+    """Validate email format"""
+    if not email:
+        return False
+    email_pattern = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+    return re.match(email_pattern, email) is not None
+
+
+def validate_password_strength(password):
+    """Validate password strength and return error message if invalid"""
+    if not password:
+        return 'Password is required.'
+    if len(password) < 8:
+        return 'Password must be at least 8 characters long.'
+    if not re.search(r'[A-Z]', password):
+        return 'Password must contain at least one uppercase letter.'
+    if not re.search(r'[a-z]', password):
+        return 'Password must contain at least one lowercase letter.'
+    if not re.search(r'\d', password):
+        return 'Password must contain at least one number.'
+    if not re.search(r'[^A-Za-z0-9]', password):
+        return 'Password must contain at least one special character.'
+    return None
+
+
+def _to_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def sanitize_profile_payload(data, fallback_profile=None):
+    """Validate and sanitize profile/prediction input values."""
+    profile_fallback = fallback_profile or {}
+    default_branch = profile_fallback.get('branch', 'Computer Science')
+    valid_branches = set(Config.BRANCH_IMPORTANT_SKILLS.keys())
+
+    cgpa = _to_float(data.get('cgpa', profile_fallback.get('cgpa', 0.0)), 0.0)
+    if cgpa < 0 or cgpa > 10:
+        return None, 'CGPA must be between 0 and 10.'
+
+    branch = str(data.get('branch', default_branch) or default_branch).strip()
+    if branch not in valid_branches:
+        return None, 'Please select a valid branch.'
+
+    internship_count = _to_int(data.get('internship_count', profile_fallback.get('internship_count', 0)), 0)
+    project_count = _to_int(data.get('project_count', profile_fallback.get('project_count', 0)), 0)
+    certification_count = _to_int(data.get('certification_count', profile_fallback.get('certification_count', 0)), 0)
+
+    numeric_limits = {
+        'internship_count': (internship_count, 0, 20),
+        'project_count': (project_count, 0, 30),
+        'certification_count': (certification_count, 0, 30),
+    }
+    for field, (val, minimum, maximum) in numeric_limits.items():
+        if val < minimum or val > maximum:
+            field_name = field.replace('_', ' ').title()
+            return None, f'{field_name} must be between {minimum} and {maximum}.'
+
+    skills = str(data.get('skills', profile_fallback.get('skills', '')) or '').strip()
+    if len(skills) > 1200:
+        return None, 'Skills input is too long.'
+
+    payload = {
+        'branch': branch,
+        'cgpa': round(cgpa, 2),
+        'internship_count': internship_count,
+        'project_count': project_count,
+        'certification_count': certification_count,
+        'skills': skills,
+    }
+    return payload, None
+
+
 # ============================================
 # AUTHENTICATION ROUTES
 # ============================================
@@ -95,7 +200,7 @@ def register():
         confirm_password = request.form.get('confirm_password')
         full_name = request.form.get('full_name')
         branch = request.form.get('branch')
-        cgpa = float(request.form.get('cgpa', 0))
+        cgpa = _to_float(request.form.get('cgpa', 0), 0.0)
         
         # Validation
         if not all([email, password, full_name, branch]):
@@ -182,6 +287,67 @@ def logout():
     return redirect(url_for('index'))
 
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Forgot password request form"""
+    reset_link = None
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+
+        if not email:
+            flash('Email is required.', 'danger')
+            return redirect(url_for('forgot_password'))
+
+        if not is_valid_email(email):
+            flash('Please enter a valid email address.', 'danger')
+            return redirect(url_for('forgot_password'))
+
+        token = User.create_password_reset_token(email)
+        if token:
+            # Email integration can replace this direct link display in production.
+            reset_link = url_for('reset_password', token=token, _external=True)
+
+        flash('If an account exists with this email, a reset link has been generated.', 'info')
+
+    return render_template('forgot_password.html', reset_link=reset_link)
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password using token"""
+    user = User.get_by_reset_token(token)
+    if not user:
+        flash('This password reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not new_password or not confirm_password:
+            flash('Both password fields are required.', 'danger')
+            return redirect(url_for('reset_password', token=token))
+
+        password_error = validate_password_strength(new_password)
+        if password_error:
+            flash(password_error, 'danger')
+            return redirect(url_for('reset_password', token=token))
+
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('reset_password', token=token))
+
+        if User.reset_password_with_token(token, new_password):
+            flash('Password reset successful. Please login with your new password.', 'success')
+            return redirect(url_for('login'))
+
+        flash('Unable to reset password. Please try again.', 'danger')
+        return redirect(url_for('reset_password', token=token))
+
+    return render_template('reset_password.html', token=token)
+
+
 # ============================================
 # STUDENT DASHBOARD & PROFILE
 # ============================================
@@ -229,16 +395,13 @@ def profile():
     user_id = session['user_id']
     
     if request.method == 'POST':
-        # Update profile
-        update_data = {
-            'branch': request.form.get('branch'),
-            'cgpa': float(request.form.get('cgpa')),
-            'internship_count': int(request.form.get('internship_count', 0)),
-            'project_count': int(request.form.get('project_count', 0)),
-            'certification_count': int(request.form.get('certification_count', 0)),
-            'skills': request.form.get('skills', ''),
-            'placement_target': request.form.get('placement_target', '')
-        }
+        current_profile = StudentProfile.get_by_user_id(user_id)
+        update_data, error = sanitize_profile_payload(request.form, current_profile)
+        if error:
+            flash(error, 'danger')
+            return redirect(url_for('profile'))
+
+        update_data['placement_target'] = str(request.form.get('placement_target', '') or '').strip()
         
         if StudentProfile.update_profile(user_id, **update_data):
             flash('Profile updated successfully!', 'success')
@@ -282,13 +445,19 @@ def predict():
         else:
             data = request.form
         
-        # Extract parameters - handle missing profile gracefully
-        cgpa = float(data.get('cgpa', profile['cgpa'] if profile else 0))
-        branch = data.get('branch', profile['branch'] if profile else 'Computer Science')
-        internship_count = int(data.get('internship_count', profile['internship_count'] if profile else 0))
-        project_count = int(data.get('project_count', profile['project_count'] if profile else 0))
-        certification_count = int(data.get('certification_count', profile['certification_count'] if profile else 0))
-        skills = data.get('skills', profile['skills'] if profile else '')
+        sanitized, error = sanitize_profile_payload(data, profile)
+        if error:
+            if request.is_json:
+                return jsonify({'success': False, 'message': error}), 400
+            flash(error, 'danger')
+            return redirect(url_for('predict'))
+
+        cgpa = sanitized['cgpa']
+        branch = sanitized['branch']
+        internship_count = sanitized['internship_count']
+        project_count = sanitized['project_count']
+        certification_count = sanitized['certification_count']
+        skills = sanitized['skills']
         
         # Count skills
         skill_list = [s.strip() for s in skills.split(',') if s.strip()]
@@ -334,10 +503,16 @@ def predict():
         )
         
         # Save skill gap analysis
+        saved_recommendations = list(skill_gap_analysis['recommendations'])
+        for action in skill_gap_analysis.get('top_actions', []):
+            saved_recommendations.append(
+                f"[Top Action - {action['impact_label']}] {action['action']}"
+            )
+
         SkillGap.save_analysis(
             user_id=user_id,
             missing_skills=skill_gap_analysis['missing_skills_str'],
-            recommended_actions='\n'.join(skill_gap_analysis['recommendations']),
+            recommended_actions='\n'.join(saved_recommendations),
             priority=skill_gap_analysis['priority']
         )
         
@@ -376,10 +551,25 @@ def results():
     # Get profile for additional info
     profile = StudentProfile.get_by_user_id(user_id)
     user = User.get_by_id(user_id)
+
+    live_skill_gap = None
+    if profile:
+        live_skill_gap = skill_analyzer.analyze(
+            {
+                'branch': profile.get('branch', prediction.get('branch', 'Computer Science')),
+                'skills': profile.get('skills', ''),
+                'cgpa': profile.get('cgpa', prediction.get('cgpa', 0)),
+                'internship_count': profile.get('internship_count', prediction.get('internship_count', 0)),
+                'project_count': profile.get('project_count', prediction.get('project_count', 0)),
+                'certification_count': profile.get('certification_count', prediction.get('certification_count', 0))
+            },
+            prediction.get('placement_probability', 0)
+        )
     
     return render_template('results.html',
                          prediction=prediction,
                          skill_gap=skill_gap,
+                         live_skill_gap=live_skill_gap,
                          profile=profile,
                          user=user)
 
@@ -395,20 +585,23 @@ def simulate():
     user_id = session['user_id']
     profile = StudentProfile.get_by_user_id(user_id)
     
-    data = request.get_json()
-    
-    # Get modified parameters - handle missing profile gracefully
-    cgpa = float(data.get('cgpa', profile['cgpa'] if profile else 0))
-    branch = data.get('branch', profile['branch'] if profile else 'Computer Science')
-    internship_count = int(data.get('internship_count', profile['internship_count'] if profile else 0))
-    project_count = int(data.get('project_count', profile['project_count'] if profile else 0))
-    certification_count = int(data.get('certification_count', profile['certification_count'] if profile else 0))
-    skills = data.get('skills', profile['skills'] if profile else '')
+    data = request.get_json() or {}
+
+    sanitized, error = sanitize_profile_payload(data, profile)
+    if error:
+        return jsonify({'success': False, 'message': error}), 400
+
+    cgpa = sanitized['cgpa']
+    branch = sanitized['branch']
+    internship_count = sanitized['internship_count']
+    project_count = sanitized['project_count']
+    certification_count = sanitized['certification_count']
+    skills = sanitized['skills']
     
     skill_count = len([s.strip() for s in skills.split(',') if s.strip()])
     
     # Get original probability
-    original_prob = data.get('original_probability', 0)
+    original_prob = _to_float(data.get('original_probability', 0), 0.0)
     
     # Calculate new probability
     new_prob = ml_predictor.predict_placement(
@@ -454,6 +647,19 @@ def upload_resume():
     user_id = session['user_id']
     
     if request.method == 'POST':
+        # Handle "add extracted skills to profile" action from resume analysis page
+        extracted_skills_raw = request.form.get('extracted_skills', '').strip()
+        if request.form.get('add_to_profile') == 'yes' and extracted_skills_raw:
+            extracted_skills = [s.strip() for s in extracted_skills_raw.split(',') if s.strip()]
+            if extracted_skills:
+                if StudentProfile.add_skills(user_id, extracted_skills):
+                    flash(f'Skills added to your profile! ({len(extracted_skills)} skills)', 'success')
+                else:
+                    flash('Could not update profile skills. Please try again.', 'danger')
+            else:
+                flash('No extracted skills were found to add.', 'warning')
+            return redirect(url_for('profile'))
+
         # Debug: Log what's in the request
         print(f"Files in request: {request.files.keys()}")
         print(f"Form data: {request.form.keys()}")
@@ -612,8 +818,58 @@ def admin_dashboard():
 @admin_required
 def admin_students():
     """View all students"""
-    students = User.get_all_students()
-    return render_template('admin_students.html', students=students)
+    users = User.get_all_users()
+    return render_template('admin_students.html', students=users)
+
+
+@app.route('/admin/users/<int:user_id>/role', methods=['POST'])
+@admin_required
+def admin_update_user_role(user_id):
+    """Promote/demote user role from admin panel."""
+    new_role = request.form.get('user_type', '').strip().lower()
+
+    if new_role not in ('student', 'admin'):
+        flash('Invalid role selected.', 'danger')
+        return redirect(url_for('admin_students'))
+
+    target_user = User.get_by_id(user_id)
+    if not target_user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('admin_students'))
+
+    # Prevent admins from demoting themselves accidentally.
+    if user_id == session.get('user_id') and new_role != 'admin':
+        flash('You cannot demote your own admin account.', 'warning')
+        return redirect(url_for('admin_students'))
+
+    if User.set_user_type(user_id, new_role):
+        flash(f"Updated role for {target_user['email']} to {new_role}.", 'success')
+    else:
+        flash('Could not update user role.', 'danger')
+
+    return redirect(url_for('admin_students'))
+
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    """Delete a user from admin panel."""
+    target_user = User.get_by_id(user_id)
+    if not target_user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('admin_students'))
+
+    # Prevent deleting current logged-in admin.
+    if user_id == session.get('user_id'):
+        flash('You cannot delete your own active account.', 'warning')
+        return redirect(url_for('admin_students'))
+
+    if User.delete_user(user_id):
+        flash(f"User {target_user['email']} deleted successfully.", 'success')
+    else:
+        flash('Could not delete user.', 'danger')
+
+    return redirect(url_for('admin_students'))
 
 
 @app.route('/admin/analytics')
@@ -625,11 +881,21 @@ def admin_analytics():
     cgpa_data = Prediction.get_cgpa_vs_placement_data()
     internship_data = Prediction.get_internship_impact_data()
     branch_data = Prediction.get_branch_placement_data()
+
+    chart_data = {
+        'branch_labels': [item['branch'] for item in branch_data],
+        'branch_values': [round(float(item['avg_probability']), 2) for item in branch_data],
+        'internship_labels': [str(item['internship_count']) for item in internship_data],
+        'internship_values': [round(float(item['avg_probability']), 2) for item in internship_data],
+        'cgpa_labels': [str(item['cgpa_range']) for item in cgpa_data],
+        'cgpa_values': [round(float(item['avg_probability']), 2) for item in cgpa_data]
+    }
     
     return render_template('admin_analytics.html',
                          cgpa_data=cgpa_data,
                          internship_data=internship_data,
-                         branch_data=branch_data)
+                         branch_data=branch_data,
+                         chart_data=chart_data)
 
 
 # ============================================

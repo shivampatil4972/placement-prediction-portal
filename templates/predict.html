@@ -3,21 +3,31 @@
 {% block title %}Make Prediction - Placement Portal{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="fas fa-brain"></i> Placement Prediction</h2>
-        <p class="text-muted">Our ML model will analyze your profile and predict your placement probability</p>
+<div class="page-shell">
+<div class="row align-items-center mb-4">
+    <div class="col-lg-8">
+        <p class="eyebrow mb-2">Prediction Studio</p>
+        <h2 class="page-title"><i class="fas fa-brain me-2"></i>Placement Prediction</h2>
+        <p class="page-subtitle mb-0">Fill in your latest profile details to generate probability, salary estimate, and action-ready insights.</p>
+    </div>
+    <div class="col-lg-4 mt-3 mt-lg-0 text-lg-end">
+        <a href="{{ url_for('profile') }}" class="btn btn-outline-primary">
+            <i class="fas fa-user-edit"></i> Edit Profile Data
+        </a>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Enter Your Details</h5>
-            </div>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card app-card form-panel">
             <div class="card-body p-4">
+                <div class="mb-4">
+                    <p class="eyebrow mb-1">Input Form</p>
+                    <h5 class="mb-0">Enter your details</h5>
+                </div>
                 <form method="POST" action="{{ url_for('predict') }}">
+                    <div class="form-group-block mb-4">
+                        <h6 class="section-heading">Academic Context</h6>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cgpa" class="form-label">CGPA *</label>
@@ -36,7 +46,10 @@
                             </select>
                         </div>
                     </div>
-                    
+                    </div>
+
+                    <div class="form-group-block mb-4">
+                        <h6 class="section-heading">Experience Signals</h6>
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="internship_count" class="form-label">Internships</label>
@@ -53,16 +66,20 @@
                             <input type="number" min="0" class="form-control" id="certification_count" name="certification_count" value="{{ profile.certification_count if profile else 0 }}">
                         </div>
                     </div>
+                    </div>
                     
+                    <div class="form-group-block mb-4">
+                        <h6 class="section-heading">Skills Inventory</h6>
                     <div class="mb-3">
                         <label for="skills" class="form-label">Skills (comma-separated)</label>
                         <textarea class="form-control" id="skills" name="skills" rows="3">{{ profile.skills if profile else '' }}</textarea>
-                        <small class="text-muted">Example: Python, Java, SQL, Machine Learning</small>
+                        <small class="text-muted">Example: Python, SQL, Data Structures, Machine Learning</small>
+                    </div>
                     </div>
                     
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-brain"></i> Predict My Placement Probability
+                            <i class="fas fa-sparkles"></i> Run AI Prediction
                         </button>
                     </div>
                 </form>
@@ -70,24 +87,23 @@
         </div>
     </div>
     
-    <div class="col-md-4">
-        <div class="card bg-light mb-3">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="fas fa-info-circle"></i> How It Works</h6>
-            </div>
+    <div class="col-lg-4">
+        <div class="card app-card mb-3">
             <div class="card-body">
-                <ol class="small">
-                    <li>Enter your academic and extracurricular details</li>
-                    <li>Our ML model analyzes your profile</li>
-                    <li>Get placement probability and salary prediction</li>
-                    <li>Receive personalized recommendations</li>
+                <p class="eyebrow mb-1">How It Works</p>
+                <h6 class="mb-3">Prediction flow</h6>
+                <ol class="small mb-0 ps-3">
+                    <li>Fill profile and skills context</li>
+                    <li>Model evaluates placement readiness</li>
+                    <li>You receive probability, salary, and recommendations</li>
                 </ol>
             </div>
         </div>
         
-        <div class="card bg-info text-white">
+        <div class="card app-card mb-3">
             <div class="card-body">
-                <h6><i class="fas fa-lightbulb"></i> Tips for Better Results</h6>
+                <p class="eyebrow mb-1">Model Tips</p>
+                <h6><i class="fas fa-lightbulb text-warning"></i> Improve prediction quality</h6>
                 <ul class="small mb-0">
                     <li>Keep your profile updated</li>
                     <li>Add all relevant skills</li>
@@ -96,6 +112,18 @@
                 </ul>
             </div>
         </div>
+
+        <div class="card app-card">
+            <div class="card-body">
+                <p class="eyebrow mb-1">Recommended Next</p>
+                <h6 class="mb-3">Before you run prediction</h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('upload_resume') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-upload"></i> Upload Resume Skills</a>
+                    <a href="{{ url_for('analytics') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-chart-line"></i> Review Previous Trends</a>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 </div>
 {% endblock %}

@@ -3,17 +3,30 @@
 {% block title %}Profile - Placement Portal{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="fas fa-user"></i> Student Profile</h2>
+{% set completion = namespace(score=0) %}
+{% if profile.cgpa and profile.cgpa > 0 %}{% set completion.score = completion.score + 20 %}{% endif %}
+{% if profile.branch %}{% set completion.score = completion.score + 15 %}{% endif %}
+{% if profile.internship_count and profile.internship_count > 0 %}{% set completion.score = completion.score + 20 %}{% endif %}
+{% if profile.project_count and profile.project_count > 0 %}{% set completion.score = completion.score + 20 %}{% endif %}
+{% if profile.skills and profile.skills|trim %}{% set completion.score = completion.score + 25 %}{% endif %}
+
+<div class="page-shell">
+<div class="row align-items-center mb-4">
+    <div class="col-lg-8">
+        <p class="eyebrow mb-2">Profile</p>
+        <h2 class="page-title"><i class="fas fa-user me-2"></i>Student Profile</h2>
+        <p class="page-subtitle mb-0">Keep your profile complete and accurate to improve prediction quality and recommendation relevance.</p>
+    </div>
+    <div class="col-lg-4 mt-3 mt-lg-0 text-lg-end">
+        <a href="{{ url_for('predict') }}" class="btn btn-outline-primary"><i class="fas fa-brain"></i> Use in Prediction</a>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card text-center">
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card app-card mb-3">
             <div class="card-body">
-                <div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">
+                <div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px;">
                     {{ user.full_name[0].upper() }}
                 </div>
                 <h4>{{ user.full_name }}</h4>
@@ -21,16 +34,32 @@
                 <p class="mb-0"><small>Member since {{ user.created_at[:7] if user.created_at else 'N/A' }}</small></p>
             </div>
         </div>
+
+        <div class="card app-card">
+            <div class="card-body">
+                <p class="eyebrow mb-1">Profile Health</p>
+                <h6 class="mb-3">Completion Score</h6>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small">Readiness data quality</span>
+                    <strong>{{ completion.score }}%</strong>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ completion.score }}%" aria-valuenow="{{ completion.score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p class="small text-muted mt-3 mb-0">Complete internships, projects, and skills to improve prediction confidence.</p>
+            </div>
+        </div>
     </div>
     
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Edit Profile</h5>
-            </div>
+    <div class="col-lg-8">
+        <div class="card app-card">
             <div class="card-body">
                 <form method="POST" action="{{ url_for('profile') }}">
-                    <h6 class="text-primary mb-3">Academic Information</h6>
+                    <p class="eyebrow mb-1">Edit Details</p>
+                    <h5 class="mb-4">Update your profile</h5>
+
+                    <div class="form-group-block mb-4">
+                    <h6 class="section-heading">Academic Information</h6>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -56,9 +85,10 @@
                         <input type="text" class="form-control" id="placement_target" name="placement_target" value="{{ profile.placement_target }}" placeholder="e.g., Software Engineer, Data Analyst">
                         <small class="text-muted">What role are you targeting?</small>
                     </div>
+                    </div>
                     
-                    <hr class="my-3">
-                    <h6 class="text-primary mb-3">Extracurricular Activities</h6>
+                    <div class="form-group-block mb-4">
+                    <h6 class="section-heading">Experience Signals</h6>
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -76,11 +106,15 @@
                             <input type="number" min="0" class="form-control" id="certification_count" name="certification_count" value="{{ profile.certification_count }}">
                         </div>
                     </div>
+                    </div>
                     
+                    <div class="form-group-block mb-4">
+                    <h6 class="section-heading">Skills & Career Fit</h6>
                     <div class="mb-3">
                         <label for="skills" class="form-label">Skills (comma-separated)</label>
                         <textarea class="form-control" id="skills" name="skills" rows="3">{{ profile.skills }}</textarea>
                         <small class="text-muted">Example: Python, Java, SQL, Machine Learning</small>
+                    </div>
                     </div>
                     
                     <div class="d-grid">
@@ -92,5 +126,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}

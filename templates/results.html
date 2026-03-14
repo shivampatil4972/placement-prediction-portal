@@ -3,16 +3,18 @@
 {% block title %}Prediction Results - Placement Portal{% endblock %}
 
 {% block content %}
+{% set analysis = live_skill_gap if live_skill_gap else None %}
+<div class="result-page page-shell">
 <div class="row mb-4">
     <div class="col-md-12 text-center">
-        <h2><i class="fas fa-chart-pie"></i> Your Placement Prediction Report</h2>
-        <p class="text-muted">Generated on {{ prediction.prediction_date[:19] if prediction.prediction_date else 'N/A' }}</p>
+        <h2 class="result-page-title"><i class="fas fa-chart-pie"></i> Your Placement Prediction Report</h2>
+        <p class="text-muted result-page-meta">Generated on {{ prediction.prediction_date[:19] if prediction.prediction_date else 'N/A' }}</p>
     </div>
 </div>
 
 <!-- Unified Result Panel -->
 <div class="card shadow-lg border-0 mb-4">
-    <div class="card-header text-white text-center py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card-header text-center py-3 result-header-bar">
         <h3 class="mb-0"><i class="fas fa-trophy"></i> Placement Prediction Results</h3>
     </div>
     <div class="card-body p-4">
@@ -22,8 +24,8 @@
                 <div class="prediction-gauge mx-auto mb-3" style="width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(
                     {% if prediction.placement_probability >= 70 %}#28a745{% elif prediction.placement_probability >= 40 %}#ffc107{% else %}#dc3545{% endif %} 0deg {{ prediction.placement_probability * 3.6 }}deg, #f0f0f0 {{ prediction.placement_probability * 3.6 }}deg 360deg
                 ); display: flex; align-items: center; justify-content: center; position: relative;">
-                    <div style="width: 160px; height: 160px; background: white; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                        <h1 class="display-4 mb-0">{{ prediction.placement_probability }}%</h1>
+                    <div class="prediction-gauge-inner">
+                        <h1 class="display-4 mb-0 result-probability-value">{{ prediction.placement_probability }}%</h1>
                         <p class="text-muted mb-0">Probability</p>
                     </div>
                 </div>
@@ -31,14 +33,14 @@
             </div>
             
             <div class="col-md-6 text-center">
-                <div class="alert alert-{% if prediction.risk_level == 'Low' %}success{% elif prediction.risk_level == 'Medium' %}warning{% else %}danger{% endif %} mb-3" style="font-size: 1.2rem;">
+                <div class="alert alert-{% if prediction.risk_level == 'Low' %}success{% elif prediction.risk_level == 'Medium' %}warning{% else %}danger{% endif %} mb-3 result-risk-alert">
                     <i class="fas fa-exclamation-circle fa-2x"></i>
                     <h4 class="mt-2">Risk Level: {{ prediction.risk_level }}</h4>
                 </div>
                 
-                <div class="bg-light p-4 rounded">
-                    <i class="fas fa-money-bill-wave fa-3x text-success mb-2"></i>
-                    <h3 class="text-success">₹ {{ prediction.expected_salary }} LPA</h3>
+                <div class="bg-light p-4 rounded result-salary-panel">
+                    <i class="fas fa-money-bill-wave fa-3x result-salary-icon mb-2"></i>
+                    <h3 class="result-salary-value">₹ {{ prediction.expected_salary }} LPA</h3>
                     <p class="text-muted">Expected Salary</p>
                 </div>
             </div>
@@ -87,32 +89,84 @@
         
         <hr>
         
-        <!-- Skill Gap Analysis -->
-        {% if skill_gap %}
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <h5><i class="fas fa-tasks"></i> Skill Gap Analysis</h5>
+        {% if analysis %}
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <small class="text-muted text-uppercase">Readiness Score</small>
+                        <h2 class="mt-2 mb-2">{{ analysis.readiness_score }}%</h2>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ analysis.readiness_score }}%" aria-valuenow="{{ analysis.readiness_score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Confidence: {{ analysis.confidence }}</small>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-12">
-                <div class="alert alert-{% if skill_gap.priority == 'High' %}danger{% elif skill_gap.priority == 'Medium' %}warning{% else %}info{% endif %}">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>Priority Level:</strong> 
-                            <span class="badge bg-{% if skill_gap.priority == 'High' %}danger{% elif skill_gap.priority == 'Medium' %}warning{% else %}success{% endif %} fs-6">
-                                {{ skill_gap.priority }}
-                            </span>
+            <div class="col-md-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <small class="text-muted text-uppercase">Skill Coverage</small>
+                        <h2 class="mt-2 mb-2">{{ analysis.skill_coverage }}%</h2>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.skill_coverage }}%" aria-valuenow="{{ analysis.skill_coverage }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
-                        <div class="col-md-6">
-                            <strong>Missing Skills:</strong> {{ skill_gap.missing_skills or 'None identified ✓' }}
-                        </div>
+                        <small class="text-muted d-block mt-2">Branch-aligned skills</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <small class="text-muted text-uppercase">Priority</small>
+                        <h5 class="mt-2 mb-2">Action Urgency</h5>
+                        <span class="badge fs-6 bg-{% if analysis.priority == 'High' %}danger{% elif analysis.priority == 'Medium' %}warning{% else %}success{% endif %}">
+                            {{ analysis.priority }}
+                        </span>
+                        <p class="small text-muted mt-3 mb-0">Missing Skills: {{ analysis.missing_skills_str }}</p>
                     </div>
                 </div>
             </div>
         </div>
-        {% endif %}
-        
-        <!-- Personalized Suggestions -->
-        {% if skill_gap %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="mb-3"><i class="fas fa-bullseye"></i> Top Recommended Actions</h5>
+                        {% if analysis.top_actions %}
+                        <ol class="mb-0">
+                            {% for action in analysis.top_actions %}
+                            <li class="mb-3">
+                                <strong>{{ action.action }}</strong>
+                                <br><small class="text-muted">Impact: {{ action.impact_label }} ({{ action.impact_score }}/10) • {{ action.rationale }}</small>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                        {% else %}
+                        <p class="text-muted mb-0">No major improvement actions required right now.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="mb-3"><i class="fas fa-star"></i> Profile Strengths</h5>
+                        {% if analysis.strengths %}
+                        <ul class="mb-0">
+                            {% for strength in analysis.strengths %}
+                            <li class="mb-2">{{ strength }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted mb-0">Build your strengths by improving projects, internships, and core skills.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif skill_gap %}
         <div class="row mb-4">
             <div class="col-md-12">
                 <h5><i class="fas fa-lightbulb"></i> Personalized Recommendations</h5>
@@ -222,4 +276,5 @@ function runSimulation() {
     });
 }
 </script>
+</div>
 {% endblock %}

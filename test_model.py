@@ -4,6 +4,7 @@ Test script to debug salary model predictions
 
 import pickle
 import sys
+import numpy as np
 
 print(f"Python version: {sys.version}")
 print(f"Python executable: {sys.executable}")

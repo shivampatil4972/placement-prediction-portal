@@ -2,10 +2,12 @@ import sys
 sys.path.append('.')
 
 from models.prediction import Prediction
+from app import app
 
 # Test the get_prediction_trends method
 user_id = 1
-trends = Prediction.get_prediction_trends(user_id)
+with app.app_context():
+    trends = Prediction.get_prediction_trends(user_id)
 
 print(f'Raw trends data from model:')
 for trend in trends:

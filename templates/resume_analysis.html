@@ -139,6 +139,7 @@
                     <p class="mb-3">Would you like to add the extracted skills to your student profile?</p>
                     <form method="POST" action="{{ url_for('upload_resume') }}">
                         <input type="hidden" name="add_to_profile" value="yes">
+                        <input type="hidden" name="extracted_skills" value="{{ analysis.skills | join(', ') }}">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-plus-lg"></i> Add All Skills to Profile
                         </button>

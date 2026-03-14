@@ -3,21 +3,67 @@
 {% block title %}Analytics - Placement Portal{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2><i class="fas fa-chart-line"></i> Analytics Dashboard</h2>
-        <p class="text-muted">Visualize your placement prediction trends and insights</p>
+{% set ns = namespace(sum_prob=0, count=0, best_prob=0, best_salary=0) %}
+{% for pred in history %}
+    {% set ns.sum_prob = ns.sum_prob + pred.placement_probability %}
+    {% set ns.count = ns.count + 1 %}
+    {% if pred.placement_probability > ns.best_prob %}
+        {% set ns.best_prob = pred.placement_probability %}
+    {% endif %}
+    {% if pred.expected_salary > ns.best_salary %}
+        {% set ns.best_salary = pred.expected_salary %}
+    {% endif %}
+{% endfor %}
+{% set avg_prob = (ns.sum_prob / ns.count)|round(1) if ns.count > 0 else 0 %}
+
+<div class="page-shell">
+<div class="row align-items-center mb-4">
+    <div class="col-lg-8">
+        <p class="eyebrow mb-2">Analytics</p>
+        <h2 class="page-title"><i class="fas fa-chart-line me-2"></i>Placement Insights Dashboard</h2>
+        <p class="page-subtitle mb-0">Track readiness momentum, salary potential, and key factors impacting placement outcomes.</p>
+    </div>
+    <div class="col-lg-4 mt-3 mt-lg-0 text-lg-end">
+        <a href="{{ url_for('predict') }}" class="btn btn-primary"><i class="fas fa-sync"></i> Refresh Prediction</a>
     </div>
 </div>
 
-<!-- Charts Row -->
-<div class="row mb-4">
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Your Prediction Trend</h5>
-            </div>
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <p class="kpi-label mb-2">Predictions Logged</p>
+            <h3 class="kpi-value mb-0">{{ ns.count }}</h3>
+            <small class="text-muted">Model history points</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <p class="kpi-label mb-2">Average Probability</p>
+            <h3 class="kpi-value mb-0">{{ avg_prob }}%</h3>
+            <small class="text-muted">Across all predictions</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <p class="kpi-label mb-2">Best Probability</p>
+            <h3 class="kpi-value mb-0">{{ ns.best_prob }}%</h3>
+            <small class="text-muted">Highest recorded score</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <p class="kpi-label mb-2">Top Salary Estimate</p>
+            <h3 class="kpi-value mb-0">₹ {{ ns.best_salary }} LPA</h3>
+            <small class="text-muted">Maximum expected package</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card app-card chart-card h-100">
             <div class="card-body">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Your Prediction Trend</h5>
                 <canvas id="trendChart"></canvas>
                 <div id="trendMessage" class="text-center text-muted mt-3" style="display: none;">
                     <small>Make more predictions to see trend over time</small>
@@ -26,36 +72,30 @@
         </div>
     </div>
     
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> CGPA vs Placement Probability</h5>
-            </div>
+    <div class="col-lg-6">
+        <div class="card app-card chart-card h-100">
             <div class="card-body">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> CGPA vs Placement Probability</h5>
                 <canvas id="cgpaChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-briefcase"></i> Internship Impact</h5>
-            </div>
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card app-card chart-card h-100">
             <div class="card-body">
+                <h5 class="mb-0"><i class="fas fa-briefcase"></i> Internship Impact</h5>
                 <canvas id="internshipChart"></canvas>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-graduation-cap"></i> Branch-wise Analysis</h5>
-            </div>
+    <div class="col-lg-6">
+        <div class="card app-card chart-card h-100">
             <div class="card-body">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap"></i> Branch-wise Analysis</h5>
                 <canvas id="branchChart"></canvas>
             </div>
         </div>
@@ -66,13 +106,11 @@
 {% if history %}
 <div class="row">
     <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-history"></i> Prediction History</h5>
-            </div>
+        <div class="card app-card">
             <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-history"></i> Prediction History</h5>
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th>Date</th>
@@ -108,7 +146,7 @@
     </div>
 </div>
 {% endif %}
-
+</div>
 {% endblock %}
 
 {% block extra_js %}

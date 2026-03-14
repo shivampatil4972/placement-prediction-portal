@@ -16,7 +16,7 @@ cursor.execute("""
         branch,
         internship_count,
         placement_probability,
-        predicted_salary,
+        expected_salary,
         created_at
     FROM predictions
     ORDER BY id DESC

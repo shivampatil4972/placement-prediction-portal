@@ -52,7 +52,9 @@ def init_database():
                 full_name TEXT,
                 user_type TEXT DEFAULT 'student',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP
+                last_login TIMESTAMP,
+                reset_token TEXT,
+                reset_token_expires_at TEXT
             )
         ''')
         
