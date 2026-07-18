@@ -75,6 +75,17 @@ class User:
             return False
 
     @staticmethod
+    def update_profile_pic(user_id, filename):
+        """Update user profile picture"""
+        query = "UPDATE users SET profile_pic = %s WHERE id = %s"
+        try:
+            execute_query(query, (filename, user_id), commit=True)
+            return True
+        except Exception as e:
+            print(f"Error updating profile pic: {e}")
+            return False
+
+    @staticmethod
     def create_password_reset_token(email, expiry_minutes=30):
         """Create password reset token for a user email"""
         user = User.get_by_email(email)

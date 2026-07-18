@@ -26,6 +26,7 @@ A comprehensive web-based platform that leverages Machine Learning to predict st
 - Academic information (CGPA, Branch, Semester)
 - Extracurricular activities (Internships, Projects, Certifications)
 - Technical skills management
+- Profile picture avatar uploads
 - Contact details and social profiles
 
 ### 3. **Machine Learning Predictions**
@@ -54,26 +55,32 @@ A comprehensive web-based platform that leverages Machine Learning to predict st
 - Real-time probability recalculation
 - Compare before/after predictions
 
-### 7. **Resume Upload & Parsing**
-- PDF resume upload
-- Automatic skill extraction using NLP
-- Skill matching with keyword database
-- Option to auto-update profile
+### 7. **Intelligent Resume Parsing (AI & Fuzzy Logic)**
+Unlike standard parsers that rely on strict exact-matching regex, this platform utilizes an advanced **Fuzzy-Logic NLP engine** powered by `thefuzz` (based on Levenshtein distance). 
+- **Real-World Error Tolerance:** Automatically detects and corrects misspellings or OCR anomalies in resumes. For example, if a student's resume contains typos like `"Jvascript"`, `"Node js"`, or `"Tensroflow"`, the engine intelligently maps them to the correct master skills (`JavaScript`, `Node.js`, `TensorFlow`).
+- **Dynamic Categorization:** Extracts skills and automatically categorizes them into distinct buckets (e.g., Cloud & DevOps, Data Science) to drive the skill-gap analyzer.
+- **Auto-Profile Synchronization:** Seamlessly updates the student's internal profile metrics directly from the PDF data.
 
-### 8. **Analytics Dashboard**
+### 8. **Enterprise-Grade Engineering Standards**
+This project transcends academic requirements by implementing strict industry standards:
+- 🐳 **Docker Containerization**: The entire application stack is containerized using a custom `Dockerfile` and `docker-compose.yml`. This guarantees perfect environment parity across dev and production, allowing one-click deployments to cloud providers (AWS/GCP).
+- 🧪 **Automated Testing Suite**: Implements a robust `pytest` suite ensuring high code reliability. The tests rigorously validate the core Machine Learning heuristics, fallback mechanisms, and the NLP parsing engine, ensuring continuous integration (CI) readiness.
+- 🔒 **Cybersecurity Hardening**: Fully abandons hardcoded credentials by employing a secure `.env` variable architecture via `python-dotenv`. This secures database URIs, Flask session keys, and admin credentials from source control leaks.
+
+### 9. **Analytics Dashboard**
 - Prediction history visualization
 - CGPA vs Placement correlation charts
 - Internship impact analysis
 - Branch-wise placement statistics
 - Interactive Chart.js visualizations
 
-### 9. **Admin Panel**
+### 10. **Admin Panel**
 - View all registered students
 - System-wide statistics
 - Branch-wise performance analysis
 - Recent predictions monitoring
 
-### 10. **PDF Report Generation**
+### 11. **PDF Report Generation**
 - Comprehensive downloadable reports
 - Includes predictions, analysis, and recommendations
 - Professional formatting using ReportLab
@@ -90,9 +97,11 @@ A comprehensive web-based platform that leverages Machine Learning to predict st
 - Chart.js
 
 ### **Backend**
-- Python 3.8+
+- Python 3.12+
 - Flask 2.3
 - Jinja2 Templates
+- Docker & Docker Compose
+- PyTest (Automated Testing)
 
 ### **Database**
 - MySQL 8.0+
@@ -105,6 +114,8 @@ A comprehensive web-based platform that leverages Machine Learning to predict st
 
 ### **Libraries**
 - PyPDF2 (Resume parsing)
+- thefuzz & python-Levenshtein (Fuzzy NLP)
+- python-dotenv (Security)
 - reportlab (PDF generation)
 - Flask-MySQLdb (Database connector)
 - Werkzeug (Security)
@@ -116,11 +127,20 @@ A comprehensive web-based platform that leverages Machine Learning to predict st
 ```
 placement-portal/
 │
+├── Dockerfile                  # Docker image configuration
+├── docker-compose.yml          # Docker Compose orchestration
+├── .env.example                # Security environment variables template
 ├── app.py                      # Main Flask application
 ├── config.py                   # Configuration settings
 ├── requirements.txt            # Python dependencies
 ├── database_schema.sql         # MySQL database schema
-├── generate_models.py          # ML model generator script
+├── run.bat                     # Windows 1-click startup script
+├── run.ps1                     # PowerShell startup script
+│
+├── tests/                      # Automated PyTest suite
+│   ├── conftest.py
+│   ├── test_ml_utils.py
+│   └── test_resume_parser.py
 │
 ├── models/                     # Database models
 │   ├── __init__.py
@@ -174,22 +194,34 @@ placement-portal/
 
 ### Installation
 
-See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed installation instructions.
+See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed manual installation instructions.
 
-**Quick Setup:**
+**Method 1: Docker (Easiest)**
+```bash
+docker compose up --build
+```
+
+**Method 2: One-Click Windows Script**
+Simply double-click the `run.bat` file in the root directory!
+
+**Method 3: Manual Setup**
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Setup MySQL database
-mysql -u root -p < database_schema.sql
+# 2. Setup Security
+copy .env.example .env
 
-# 3. Update config.py with your MySQL credentials
+# 3. Setup MySQL database
+mysql -u root -p < database_schema.sql
 
 # 4. Generate ML models
 python generate_models.py
 
-# 5. Run the application
+# 5. Run automated tests
+pytest tests/ -v
+
+# 6. Run the application
 python app.py
 ```
 

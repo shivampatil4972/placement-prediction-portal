@@ -75,9 +75,14 @@
                                 </a>
                             </li>
                         {% endif %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle"></i> {{ session.get('full_name') }}
+                        <li class="nav-item dropdown d-flex align-items-center">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                {% if session.get('profile_pic') %}
+                                <img src="{{ url_for('static', filename='uploads/profiles/' + session.get('profile_pic')) }}" alt="Profile" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                {% else %}
+                                <i class="fas fa-user-circle me-1"></i>
+                                {% endif %}
+                                {{ session.get('full_name') }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ url_for('logout') }}">

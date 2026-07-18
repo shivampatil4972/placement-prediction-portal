@@ -5,6 +5,7 @@ Extracts text and skills from PDF resumes
 
 import PyPDF2
 import re
+from thefuzz import fuzz
 from config import Config
 
 class ResumeParser:
@@ -38,7 +39,7 @@ class ResumeParser:
     @staticmethod
     def extract_skills(text):
         """
-        Extract skills from text using keyword matching
+        Extract skills from text using keyword matching and fuzzy logic
         
         Args:
             text: Resume text content
@@ -52,17 +53,37 @@ class ResumeParser:
         # Convert text to lowercase for case-insensitive matching
         text_lower = text.lower()
         
-        found_skills = []
+        found_skills = set()
         
-        # Search for each skill keyword
+        # 1. Exact Keyword Matching (Fast & Handles Boundaries)
         for skill in Config.SKILL_KEYWORDS:
-            # Use word boundaries to avoid partial matches
             pattern = r'\b' + re.escape(skill.lower()) + r'\b'
-            
             if re.search(pattern, text_lower):
-                found_skills.append(skill)
+                found_skills.add(skill)
+                
+        # 2. Fuzzy Matching (Catches typos like "Jvascript", "Node js")
+        remaining_skills = [s for s in Config.SKILL_KEYWORDS if s not in found_skills]
+        words = re.findall(r'\b\w+\b', text_lower)
         
-        return found_skills
+        for skill in remaining_skills:
+            skill_lower = skill.lower()
+            
+            # Skip very short skills to avoid false positives with fuzzy logic
+            if len(skill_lower) <= 2:
+                continue
+                
+            # For multi-word skills, use partial ratio
+            if ' ' in skill_lower or '.' in skill_lower:
+                if fuzz.partial_ratio(skill_lower, text_lower) >= 85:
+                    found_skills.add(skill)
+            else:
+                # For single-word skills, compare against text tokens
+                for word in set(words):
+                    if len(word) > 2 and fuzz.ratio(skill_lower, word) >= 85:
+                        found_skills.add(skill)
+                        break
+        
+        return list(found_skills)
     
     @staticmethod
     def extract_email(text):

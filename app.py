@@ -266,6 +266,7 @@ def login():
             session['user_type'] = user['user_type']
             session['full_name'] = user['full_name']
             session['email'] = user['email']
+            session['profile_pic'] = user.get('profile_pic')
             
             flash(f'Welcome back, {user["full_name"]}!', 'success')
             
@@ -395,6 +396,22 @@ def profile():
     user_id = session['user_id']
     
     if request.method == 'POST':
+        # Handle profile picture upload
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file and file.filename != '':
+                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+                if ext in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                    filename = secure_filename(f"user_{user_id}_{file.filename}")
+                    os.makedirs(app.config['PROFILE_PIC_FOLDER'], exist_ok=True)
+                    filepath = os.path.join(app.config['PROFILE_PIC_FOLDER'], filename)
+                    file.save(filepath)
+                    
+                    if User.update_profile_pic(user_id, filename):
+                        session['profile_pic'] = filename
+                else:
+                    flash('Invalid image format. Please upload JPG or PNG.', 'warning')
+
         current_profile = StudentProfile.get_by_user_id(user_id)
         update_data, error = sanitize_profile_payload(request.form, current_profile)
         if error:

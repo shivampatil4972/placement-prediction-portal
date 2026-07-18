@@ -5,22 +5,28 @@ Update the database credentials according to your MySQL setup
 
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
-    # Secret key for session management (CHANGE THIS IN PRODUCTION)
+    # Secret key for session management
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
     # MySQL Database Configuration
-    MYSQL_HOST = 'localhost'
-    MYSQL_USER = 'root'  # Change to your MySQL username
-    MYSQL_PASSWORD = ''  # Change to your MySQL password
-    MYSQL_DB = 'placement_portal'
+    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
+    MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
+    MYSQL_DB = os.environ.get('MYSQL_DB', 'placement_portal')
     MYSQL_CURSORCLASS = 'DictCursor'
     
     # File Upload Configuration
-    UPLOAD_FOLDER = 'static/uploads'
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
+    PROFILE_PIC_FOLDER = os.path.join(UPLOAD_FOLDER, 'profiles')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload
     ALLOWED_EXTENSIONS = {'pdf'}
+    ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg'}
     
     # Session Configuration
     SESSION_PERMANENT = False
@@ -82,5 +88,5 @@ class Config:
     PREDICTIONS_PER_PAGE = 10
     
     # Admin credentials (for initial setup)
-    DEFAULT_ADMIN_EMAIL = 'admin@placement.com'
-    DEFAULT_ADMIN_PASSWORD = 'admin123'  # CHANGE THIS!
+    DEFAULT_ADMIN_EMAIL = os.environ.get('DEFAULT_ADMIN_EMAIL', 'admin@placement.com')
+    DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin123')

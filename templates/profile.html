@@ -26,9 +26,13 @@
     <div class="col-lg-4">
         <div class="card app-card mb-3">
             <div class="card-body">
+                {% if session.get('profile_pic') %}
+                <img src="{{ url_for('static', filename='uploads/profiles/' + session.get('profile_pic')) }}" class="mx-auto mb-3 shadow-sm" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; display: block;" alt="Profile Picture">
+                {% else %}
                 <div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px;">
                     {{ user.full_name[0].upper() }}
                 </div>
+                {% endif %}
                 <h4>{{ user.full_name }}</h4>
                 <p class="text-muted">{{ user.email }}</p>
                 <p class="mb-0"><small>Member since {{ user.created_at[:7] if user.created_at else 'N/A' }}</small></p>
@@ -54,9 +58,18 @@
     <div class="col-lg-8">
         <div class="card app-card">
             <div class="card-body">
-                <form method="POST" action="{{ url_for('profile') }}">
+                <form method="POST" action="{{ url_for('profile') }}" enctype="multipart/form-data">
                     <p class="eyebrow mb-1">Edit Details</p>
                     <h5 class="mb-4">Update your profile</h5>
+
+                    <div class="form-group-block mb-4">
+                    <h6 class="section-heading">Account & Picture</h6>
+                    
+                    <div class="mb-4">
+                        <label for="profile_pic" class="form-label">Profile Picture</label>
+                        <input class="form-control" type="file" id="profile_pic" name="profile_pic" accept=".jpg,.jpeg,.png">
+                        <small class="text-muted">Upload a square image for best results (JPG or PNG).</small>
+                    </div>
 
                     <div class="form-group-block mb-4">
                     <h6 class="section-heading">Academic Information</h6>

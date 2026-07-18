@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - /app/static/uploads
+      - /app/__pycache__
+      - /app/models/__pycache__
+    environment:
+      - FLASK_ENV=development
+    env_file:
+      - .env
